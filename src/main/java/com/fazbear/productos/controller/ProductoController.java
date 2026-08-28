@@ -69,7 +69,7 @@ public class ProductoController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<Producto> update(@PathVariable Long id,
-                                           @RequestBody Producto producto) {
+            @RequestBody Producto producto) {
         return productoService.findById(id)
                 .map(existing -> {
                     producto.setId(id);
