@@ -4,6 +4,7 @@ import com.fazbear.productos.model.Producto;
 import com.fazbear.productos.service.ProductoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/productos")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class ProductoController {
 
     private final ProductoService productoService;
@@ -58,6 +59,7 @@ public class ProductoController {
      * Crea un nuevo producto en el catálogo.
      */
     @PostMapping
+    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<Producto> create(@RequestBody Producto producto) {
         Producto saved = productoService.save(producto);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
@@ -68,6 +70,7 @@ public class ProductoController {
      * Actualiza un producto existente por ID.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<Producto> update(@PathVariable Long id,
             @RequestBody Producto producto) {
         return productoService.findById(id)
@@ -83,6 +86,7 @@ public class ProductoController {
      * Elimina un producto del catálogo.
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (productoService.findById(id).isEmpty()) {
             return ResponseEntity.notFound().build();
