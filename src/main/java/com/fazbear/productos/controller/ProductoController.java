@@ -14,7 +14,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/productos")
-@CrossOrigin(origins = "https://35.175.9.254")
+@CrossOrigin(origins = "https://w8xu8o4pd7.execute-api.us-east-1.amazonaws.com")
 public class ProductoController {
 
     private final ProductoService productoService;
