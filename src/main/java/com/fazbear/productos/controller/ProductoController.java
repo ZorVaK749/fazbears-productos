@@ -4,6 +4,7 @@ import com.fazbear.productos.model.Producto;
 import com.fazbear.productos.service.ProductoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/productos")
-@CrossOrigin(origins = "https://35.175.9.254")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class ProductoController {
 
     private final ProductoService productoService;
@@ -57,6 +58,7 @@ public class ProductoController {
      * POST /api/productos
      * Crea un nuevo producto en el catálogo.
      */
+    @PreAuthorize("hasRole('Admin') or hasRole('Despachador')")
     @PostMapping
     public ResponseEntity<Producto> create(@RequestBody Producto producto) {
         Producto saved = productoService.save(producto);
@@ -67,6 +69,7 @@ public class ProductoController {
      * PUT /api/productos/{id}
      * Actualiza un producto existente por ID.
      */
+    @PreAuthorize("hasRole('Admin') or hasRole('Despachador')")
     @PutMapping("/{id}")
     public ResponseEntity<Producto> update(@PathVariable Long id,
             @RequestBody Producto producto) {
@@ -82,6 +85,7 @@ public class ProductoController {
      * DELETE /api/productos/{id}
      * Elimina un producto del catálogo.
      */
+    @PreAuthorize("hasRole('Admin')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (productoService.findById(id).isEmpty()) {
