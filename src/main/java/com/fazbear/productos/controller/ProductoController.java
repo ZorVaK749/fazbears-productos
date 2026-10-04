@@ -58,8 +58,8 @@ public class ProductoController {
      * POST /api/productos
      * Crea un nuevo producto en el catálogo.
      */
+    @PreAuthorize("hasRole('Admin') or hasRole('Despachador')")
     @PostMapping
-    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<Producto> create(@RequestBody Producto producto) {
         Producto saved = productoService.save(producto);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
@@ -69,8 +69,8 @@ public class ProductoController {
      * PUT /api/productos/{id}
      * Actualiza un producto existente por ID.
      */
+    @PreAuthorize("hasRole('Admin') or hasRole('Despachador')")
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<Producto> update(@PathVariable Long id,
             @RequestBody Producto producto) {
         return productoService.findById(id)
@@ -85,8 +85,8 @@ public class ProductoController {
      * DELETE /api/productos/{id}
      * Elimina un producto del catálogo.
      */
-    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('Admin')")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (productoService.findById(id).isEmpty()) {
             return ResponseEntity.notFound().build();
