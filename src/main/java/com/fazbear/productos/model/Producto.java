@@ -1,6 +1,8 @@
 package com.fazbear.productos.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.PositiveOrZero;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.math.BigDecimal;
 
 /**
@@ -32,6 +34,15 @@ public class Producto {
 
     @Column(name = "imagen_url", length = 255)
     private String imagenUrl;
+
+    /** Stock de demostración; el default SQL también cubre las semillas data.sql. */
+    @PositiveOrZero
+    @Column(nullable = false, columnDefinition = "integer default 20")
+    private int stock = 20;
+
+    @Transient
+    @JsonIgnore
+    private boolean stockInformado;
 
     // ─── Constructores ────────────────────────────────────────────────────────
 
@@ -65,4 +76,9 @@ public class Producto {
 
     public String getImagenUrl() { return imagenUrl; }
     public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
+
+    public int getStock() { return stock; }
+    public void setStock(int stock) { this.stock = stock; this.stockInformado = true; }
+    @JsonIgnore
+    public boolean isStockInformado() { return stockInformado; }
 }

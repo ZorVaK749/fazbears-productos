@@ -2,6 +2,7 @@ package com.fazbear.productos.controller;
 
 import com.fazbear.productos.model.Producto;
 import com.fazbear.productos.service.ProductoService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -58,7 +59,7 @@ public class ProductoController {
      * Crea un nuevo producto en el catálogo.
      */
     @PostMapping
-    public ResponseEntity<Producto> create(@RequestBody Producto producto) {
+    public ResponseEntity<Producto> create(@Valid @RequestBody Producto producto) {
         Producto saved = productoService.save(producto);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -69,9 +70,13 @@ public class ProductoController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<Producto> update(@PathVariable Long id,
-            @RequestBody Producto producto) {
+            @Valid @RequestBody Producto producto) {
         return productoService.findById(id)
                 .map(existing -> {
+                    // Clientes anteriores que editan el catálogo no deben reponer stock sin pedirlo.
+                    if (!producto.isStockInformado()) {
+                        producto.setStock(existing.getStock());
+                    }
                     producto.setId(id);
                     return ResponseEntity.ok(productoService.save(producto));
                 })
