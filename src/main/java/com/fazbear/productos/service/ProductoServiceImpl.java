@@ -3,6 +3,8 @@ package com.fazbear.productos.service;
 import com.fazbear.productos.model.Producto;
 import com.fazbear.productos.repository.ProductoRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.fazbear.productos.events.CatalogEvents;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,9 +17,11 @@ import java.util.Optional;
 public class ProductoServiceImpl implements ProductoService {
 
     private final ProductoRepository productoRepository;
+    private final CatalogEvents events;
 
-    public ProductoServiceImpl(ProductoRepository productoRepository) {
+    public ProductoServiceImpl(ProductoRepository productoRepository, CatalogEvents events) {
         this.productoRepository = productoRepository;
+        this.events = events;
     }
 
     @Override
@@ -36,12 +40,18 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
+    @Transactional
     public Producto save(Producto producto) {
-        return productoRepository.save(producto);
+        if (producto.getId() != null) productoRepository.findForUpdate(producto.getId());
+        Producto saved = productoRepository.saveAndFlush(producto);
+        events.snapshot(saved, true);
+        return saved;
     }
 
     @Override
+    @Transactional
     public void deleteById(Long id) {
+        productoRepository.findForUpdate(id).ifPresent(p -> events.snapshot(p, false));
         productoRepository.deleteById(id);
     }
 }

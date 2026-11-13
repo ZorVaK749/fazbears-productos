@@ -15,6 +15,9 @@ import java.util.List;
  */
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Producto p where p.id = :id")
+    java.util.Optional<Producto> findForUpdate(@Param("id") Long id);
 
     /**
      * Busca productos por categoría (case-insensitive).

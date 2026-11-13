@@ -29,7 +29,8 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest(properties = {"spring.sql.init.mode=never", "spring.jpa.show-sql=false"}, showSql = false)
-@Import(StockService.class)
+@Import({StockService.class, com.fazbear.productos.events.CatalogEvents.class,
+    com.fazbear.productos.events.EventOutbox.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class StockServiceIntegrationTest {
     @Autowired StockService service;

@@ -23,11 +23,14 @@ public class StockService {
     private final ProductoRepository productos;
     private final StockEventRepository procesados;
     private final TransactionTemplate transaction;
+    private final com.fazbear.productos.events.CatalogEvents catalogEvents;
 
     public StockService(ProductoRepository productos, StockEventRepository procesados,
-                        PlatformTransactionManager transactionManager) {
+                        PlatformTransactionManager transactionManager,
+                        com.fazbear.productos.events.CatalogEvents catalogEvents) {
         this.productos = productos;
         this.procesados = procesados;
+        this.catalogEvents = catalogEvents;
         this.transaction = new TransactionTemplate(transactionManager);
         // El catch de duplicados se ejecuta después del rollback, no en una transacción invalidada.
         this.transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -51,6 +54,7 @@ public class StockService {
                     if (productos.descontarStock(item.getKey(), item.getValue()) != 1) {
                         throw new StockEventException("Producto inexistente o stock insuficiente: " + item.getKey());
                     }
+                    catalogEvents.snapshot(productos.findById(item.getKey()).orElseThrow(), true);
                 }
                 return true;
             }));

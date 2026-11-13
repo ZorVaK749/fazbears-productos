@@ -27,6 +27,10 @@ public class SecurityConfig {
 
     @Value("${spring.security.oauth2.resourceserver.jwt.client-id}")
     private String clientId;
+    @Value("${spring.security.oauth2.resourceserver.jwt.tenant-id:ee0d2c5b-e60b-4c57-9b30-8a38a520c430}")
+    private String tenantId;
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri:}")
+    private String jwkSetUri;
 
     /**
      * JwtDecoder personalizado: valida issuer, expiración Y audience
@@ -34,7 +38,8 @@ public class SecurityConfig {
      */
     @Bean
     public JwtDecoder jwtDecoder() {
-        NimbusJwtDecoder decoder = JwtDecoders.fromIssuerLocation(issuerUri);
+        NimbusJwtDecoder decoder = jwkSetUri.isBlank() ? JwtDecoders.fromIssuerLocation(issuerUri)
+            : NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
 
         // Validador de audience: acepta si aud contiene el clientId
         OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<List<String>>(
@@ -42,7 +47,9 @@ public class SecurityConfig {
         );
 
         OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri);
-        OAuth2TokenValidator<Jwt> combined  = new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
+        OAuth2TokenValidator<Jwt> tenantValidator = new JwtClaimValidator<Object>(
+            "tid", tid -> tid instanceof String && tenantId.equals(tid));
+        OAuth2TokenValidator<Jwt> combined  = new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator, tenantValidator);
         decoder.setJwtValidator(combined);
 
         return decoder;
@@ -54,6 +61,11 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/productos/*/interacciones").authenticated()
+                // No administrator role is defined in the existing contract: fail closed on catalog CRUD.
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/productos", "/api/productos/**").denyAll()
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/productos/**").denyAll()
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/productos/**").denyAll()
                 .requestMatchers("/api/productos/**").authenticated()
                 .anyRequest().authenticated()
             )

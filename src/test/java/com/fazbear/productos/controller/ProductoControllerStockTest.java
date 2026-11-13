@@ -22,6 +22,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(value = ProductoController.class, properties = "logging.level.org.springframework.security=WARN")
+// Controller business/validation regression tests; authorization has separate EV3 tests.
+@org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc(addFilters = false)
 @Import(SecurityConfig.class)
 class ProductoControllerStockTest {
     @Autowired MockMvc mvc;
