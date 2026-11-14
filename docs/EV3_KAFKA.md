@@ -1,5 +1,12 @@
 # EV3 product producers
 
+AWS13/11: `Dockerfile.aws`, perfil `ev3-aws` con PostgreSQL/DDL validate, Kafka
+habilitado y Entra real sin override LAB. Esquema/catálogo inicial deben revisarse
+antes del rollout; no migra automáticamente H2. Workflow GHCR manual opt-in.
+Procedimiento en `fazbear-pago/docs/AWS_DEPLOY_ROLLBACK.md`. Test cruzado exporta JSON
+real de outbox y Analytics lo consume por Kafka sin adaptación. Puertos de test
+pueden cambiarse con PRODUCTOS_TEST_PORT/CARRITO_TEST_PORT ante reservas Windows.
+
 Kafka is **off by default** (`EV3_KAFKA_ENABLED=false`). Boot 4.1.1 manages
 `spring-boot-starter-kafka`/Spring Kafka versions. Existing Dockerfile builds/runs Java 21.
 No AWS, registry publishing, legacy H2/R2 files, or existing databases are required.

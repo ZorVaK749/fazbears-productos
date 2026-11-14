@@ -107,4 +107,21 @@ class ProductEventsIntegrationTest {
         });
         assertEquals(0, outbox.count()); assertEquals(1, productos.count());
     }
+
+    @Test void actualProducerExportsCatalogAndSelectionContract() throws Exception {
+        service.save(producto);
+        mvc.perform(post("/api/productos/" + producto.getId() + "/interacciones")
+            .with(jwt().jwt(j -> j.claim("tid", TENANT).claim("oid", OWNER).claim("scp", "access_as_user")))
+            .contentType("application/json").content("{\"tipo\":\"SELECT\"}"))
+            .andExpect(status().isAccepted());
+        var events = mapper.createArrayNode();
+        for (String payload : jdbc.queryForList("select payload from ev3_outbox order by id", String.class))
+            events.add(mapper.readTree(payload));
+        assertEquals(2, events.size());
+        assertEquals(events.get(0).at("/data/productoId"), events.get(1).at("/data/productoId"));
+        if (Boolean.getBoolean("ev3.contract.export")) {
+            java.nio.file.Files.createDirectories(java.nio.file.Path.of("target/contracts"));
+            java.nio.file.Files.writeString(java.nio.file.Path.of("target/contracts/productos.json"), events.toString());
+        }
+    }
 }

@@ -6,14 +6,14 @@ services:
       POSTGRES_DB: ev3_productos_test
       POSTGRES_USER: ev3
       POSTGRES_PASSWORD: ev3-local-only
-    ports: ["127.0.0.1:56432:5432"]
+    ports: ["127.0.0.1:${PRODUCTOS_TEST_PORT:-56432}:5432"]
   carrito-db:
     image: postgres:17.7-alpine
     environment:
       POSTGRES_DB: ev3_carrito_test
       POSTGRES_USER: ev3
       POSTGRES_PASSWORD: ev3-local-only
-    ports: ["127.0.0.1:56431:5432"]
+    ports: ["127.0.0.1:${CARRITO_TEST_PORT:-56431}:5432"]
   kafka:
     image: apache/kafka:4.1.1
     ports: ["127.0.0.1:19092:9092"]
