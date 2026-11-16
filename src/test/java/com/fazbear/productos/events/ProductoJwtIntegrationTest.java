@@ -98,4 +98,37 @@ class ProductoJwtIntegrationTest {
                 .andExpect(status().isForbidden());
         }
     }
+
+    @Test void corsPreflightAndActualRequestTests() throws Exception {
+        String frontend = "https://p5gsy16utd.execute-api.us-east-1.amazonaws.com";
+        // 1. OPTIONS preflight with allowed origin
+        mvc.perform(options("/api/productos/" + id + "/interacciones")
+                .header("Origin", frontend)
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "authorization,content-type,accept,origin,x-requested-with"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Access-Control-Allow-Origin", frontend));
+
+        // 2. Unauthorized origin rejected
+        mvc.perform(options("/api/productos")
+                .header("Origin", "https://unauthorized.evil.com")
+                .header("Access-Control-Request-Method", "GET"))
+            .andExpect(status().isForbidden())
+            .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
+
+        // 3. GET protected without token returns 401
+        mvc.perform(get("/api/productos/" + id))
+            .andExpect(status().isUnauthorized());
+
+        // 4. GET protected without token with allowed origin retains CORS header
+        mvc.perform(get("/api/productos/" + id).header("Origin", frontend))
+            .andExpect(status().isUnauthorized())
+            .andExpect(header().string("Access-Control-Allow-Origin", frontend));
+
+        // 5. Valid JWT with allowed origin succeeds
+        String bearer = token(Map.of(), KEY);
+        mvc.perform(get("/api/productos/" + id).header("Origin", frontend).header("Authorization", "Bearer " + bearer))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Access-Control-Allow-Origin", frontend));
+    }
 }

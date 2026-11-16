@@ -14,7 +14,11 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
@@ -58,14 +62,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/api/productos/**", "/api/productos").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/productos/*/interacciones").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/productos/*/interacciones").authenticated()
                 // No administrator role is defined in the existing contract: fail closed on catalog CRUD.
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/productos", "/api/productos/**").denyAll()
-                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/productos/**").denyAll()
-                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/productos/**").denyAll()
+                .requestMatchers(HttpMethod.POST, "/api/productos", "/api/productos/**").denyAll()
+                .requestMatchers(HttpMethod.PUT, "/api/productos/**").denyAll()
+                .requestMatchers(HttpMethod.DELETE, "/api/productos/**").denyAll()
                 .requestMatchers("/api/productos/**").authenticated()
                 .anyRequest().authenticated()
             )
@@ -73,5 +79,21 @@ public class SecurityConfig {
             .headers(headers -> headers.frameOptions(f -> f.disable()));
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration cors = new CorsConfiguration();
+        cors.setAllowedOrigins(List.of(
+            "https://p5gsy16utd.execute-api.us-east-1.amazonaws.com",
+            "http://localhost:4200"));
+        cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
+        cors.setAllowCredentials(false);
+        cors.setMaxAge(3600L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/productos/**", cors);
+        source.registerCorsConfiguration("/api/productos", cors);
+        return source;
     }
 }
