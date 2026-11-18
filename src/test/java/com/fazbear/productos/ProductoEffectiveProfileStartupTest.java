@@ -10,7 +10,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
-import org.mockito.Mockito;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -31,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     "spring.datasource.driver-class-name=org.h2.Driver",
     "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
     "spring.jpa.hibernate.ddl-auto=update",
+    "spring.sql.init.mode=always",
     "ev3.kafka.enabled=true",
     "spring.kafka.bootstrap-servers=localhost:9092",
     "spring.rabbitmq.host=localhost",
