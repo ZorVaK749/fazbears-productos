@@ -11,6 +11,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -32,6 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
     "spring.jpa.hibernate.ddl-auto=update",
     "spring.sql.init.mode=always",
     "ev3.kafka.enabled=true",
+    "ev3.kafka.initial-delay-ms=600000",
+    "ev3.aws.catalog-snapshot=true",
     "spring.kafka.bootstrap-servers=localhost:9092",
     "spring.rabbitmq.host=localhost",
     "spring.rabbitmq.listener.simple.auto-startup=false",
@@ -52,6 +55,9 @@ class ProductoEffectiveProfileStartupTest {
     @Autowired
     private ProductoRepository productoRepository;
 
+    @Autowired
+    private JdbcTemplate jdbc;
+
     @Test
     @DisplayName("El perfil efectivo ev3-aws debe inicializar exactamente los 23 productos con 20 unidades cada uno")
     void testCatalogInitializationUnderEffectiveProfile() {
@@ -60,6 +66,8 @@ class ProductoEffectiveProfileStartupTest {
 
         // Verificar que todas las unidades iniciales son 20
         assertThat(productos).allMatch(p -> p.getStock() == 20);
+        assertThat(jdbc.queryForObject("select count(*) from ev3_outbox where topic = ?",
+                Long.class, "producto.actualizado.v1")).isEqualTo(23);
 
         // Simular descuento de stock
         Producto p1 = productos.get(0);
