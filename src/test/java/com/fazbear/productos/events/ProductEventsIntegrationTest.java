@@ -47,7 +47,7 @@ class ProductEventsIntegrationTest {
     Producto producto;
     @BeforeEach void setup() {
         outbox.deleteAll(); productos.deleteAll();
-        producto = productos.saveAndFlush(new Producto("Actual catalog", null, new BigDecimal("17.25"), "PIZZA", null));
+        producto = productos.saveAndFlush(new Producto("Actual catalog", null, new BigDecimal("17250"), "PIZZA", null));
     }
     @Test void authenticatedViewAndSelectEmitOnlyValidatedOwner() throws Exception {
         for (String type : List.of("VIEW", "SELECT")) {
@@ -69,7 +69,7 @@ class ProductEventsIntegrationTest {
     }
     @Test void readDoesNotImplyViewAndCrudFailsClosed() throws Exception {
         mvc.perform(get("/api/productos/" + producto.getId()).with(jwt())).andExpect(status().isOk())
-            .andExpect(jsonPath("$.precio").value(17.25)).andExpect(jsonPath("$.stock").value(20));
+            .andExpect(jsonPath("$.precio").value(17250)).andExpect(jsonPath("$.stock").value(20));
         mvc.perform(post("/api/productos").with(jwt()).contentType("application/json").content("{}"))
             .andExpect(status().isForbidden());
         mvc.perform(put("/api/productos/" + producto.getId()).with(jwt()).contentType("application/json").content("{}"))
@@ -97,7 +97,7 @@ class ProductEventsIntegrationTest {
         var payload = mapper.readTree(jdbc.queryForObject("select payload from ev3_outbox", String.class));
         assertEquals("producto.actualizado.v1", payload.get("eventType").asText());
         assertEquals(17, payload.at("/data/stock").asInt());
-        assertEquals(new BigDecimal("17.25"), payload.at("/data/precio").decimalValue());
+        assertEquals(0, new BigDecimal("17250").compareTo(payload.at("/data/precio").decimalValue()));
         assertTrue(payload.at("/data/activo").asBoolean());
     }
     @Test void catalogAndOutboxRollbackTogether() {
@@ -123,5 +123,12 @@ class ProductEventsIntegrationTest {
             java.nio.file.Files.createDirectories(java.nio.file.Path.of("target/contracts"));
             java.nio.file.Files.writeString(java.nio.file.Path.of("target/contracts/productos.json"), events.toString());
         }
+    }
+
+    @Test void fractionalPriceDoesNotChangeTheCatalogOrEmitAnEvent() {
+        producto.setPrecio(new BigDecimal("12.99"));
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> service.save(producto));
+        assertEquals(0, outbox.count());
+        assertEquals(0, new BigDecimal("17250").compareTo(productos.findById(producto.getId()).orElseThrow().getPrecio()));
     }
 }
