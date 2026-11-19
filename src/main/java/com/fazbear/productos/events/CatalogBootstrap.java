@@ -19,15 +19,18 @@ public class CatalogBootstrap implements CommandLineRunner {
     private final CatalogEvents events;
     private final DataSource dataSource;
     private final Environment environment;
+    private final CatalogClpMigration clpMigration;
     @Value("${ev3.local.seed:false}") private boolean seed;
     @Value("${ev3.local.catalog-snapshot:false}") private boolean labSnapshot;
     @Value("${ev3.aws.catalog-snapshot:false}") private boolean awsSnapshot;
+    @Value("${ev3.aws.catalog-migrate-clp:false}") private boolean awsMigrateClp;
     @Value("${ev3.kafka.enabled:false}") private boolean kafkaEnabled;
 
     public CatalogBootstrap(ProductoRepository productos, CatalogEvents events, DataSource dataSource,
-                            Environment environment) {
+                            Environment environment, CatalogClpMigration clpMigration) {
         this.productos = productos; this.events = events; this.dataSource = dataSource;
         this.environment = environment;
+        this.clpMigration = clpMigration;
     }
     @Override
     @Transactional
@@ -36,6 +39,7 @@ public class CatalogBootstrap implements CommandLineRunner {
         if (!aws && seed && productos.count() == 0) {
             new ResourceDatabasePopulator(new ClassPathResource("data.sql")).execute(dataSource);
         }
+        if (aws && awsMigrateClp && clpMigration.migrate(productos)) return;
         if (aws ? awsSnapshot : labSnapshot) {
             var ids = productos.findAll().stream().map(p -> p.getId()).sorted().toList();
             if (aws && (!kafkaEnabled || ids.size() != 23)) {
